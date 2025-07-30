@@ -9,7 +9,7 @@ int main() {
         for (const auto& [nome, turma] : turmas) {
             std::cout << "Turma: " << nome << "\n";
             for (const auto& h : turma.horarios) {
-                std::cout << "  Dia " << h.DiaSemana << ", Tempo " << h.tempo << " - " << h.Disciplina << "\n";
+                std::cout << "  Dia " << h.DiaSemana << ", Tempo " << h.TempoLetivo << " - " << h.Disciplina << "\n";
             }
             std::cout << std::endl;
         }
