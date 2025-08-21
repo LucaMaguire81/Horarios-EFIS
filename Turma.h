@@ -1,20 +1,30 @@
 #pragma once
+
 #include <string>
 #include <vector>
 
+using namespace std;
+
 struct Horario {
-    int DiaSemana;      // 1 = Segunda, ..., 5 = Sexta
-    int TempoLetivo;          // Bloco do dia (ex: 2ª aula)
-    std::string Disciplina; // Ex: "EFIS"
+
+    string Disciplina;
+    int DiaSemana;
+    int TempoLetivo;
+
 };
 
 class Turma {
+
 public:
-    std::string nome;
-    std::vector<Horario> horarios;
+
+    string nome;
+    vector<Horario> horarios;
 
     Turma() = default;
-    Turma(const std::string& nome);
+    Turma(const string& nome);
 
     void adicionarHorario(const Horario& h);
+
+    vector<Horario> getHorariosEFIS() const;
+
 };
