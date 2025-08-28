@@ -3,4 +3,4 @@
 
 using namespace std;
 
-vector<string> atribuirModalidadesParaAno(int ano);
+vector<string> atribuirModalidades(int ano);

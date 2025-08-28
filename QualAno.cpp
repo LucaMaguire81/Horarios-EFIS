@@ -19,7 +19,7 @@ int extrairAnoTurma(const string& nomeTurma) {
 
     if (digitos.empty() || digitos.size() > 4) { // Pequenas verificações
 
-        cout << "Erro: string sem dígitos no início ou número muito grande.\n";
+        cout << "Erro: string sem digitos no inicio ou numero muito grande.\n";
         return -1;
 
     }
@@ -31,7 +31,7 @@ int extrairAnoTurma(const string& nomeTurma) {
 
     } catch (...) {
 
-        cout << "Erro: exceção na conversão stoi\n";
+        cout << "Erro: excecao na conversao stoi\n";
         return -1;
 
     }

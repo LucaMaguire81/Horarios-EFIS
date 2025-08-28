@@ -1,216 +1,107 @@
 #include "AtribuicaoModalidades.h"
-
+#include <vector>
+#include <string>
 #include <map>
-#include <random>
 #include <algorithm>
-#include <set>
+#include <random>
+#include <chrono>
 
 using namespace std;
 
-map<string, vector<string>> categoriasSegundoCiclo = {
-    {"A", {"Pre-desportivos"}},
-    {"B", {"Futebol", "Basquetebol", "Andebol", "Voleibol"}},
-    {"C", {"Ginastica Solo", "Ginastica Aparelhos"}},
-    {"D", {"Atletismo"}},
-    {"E", {"Patinagem"}},
-    {"F", {"Danca"}},
-    {"G", {"Outras"}}
-};
+vector<string> atribuirModalidades(int ano) {
+    unsigned seed = chrono::system_clock::now().time_since_epoch().count();
+    mt19937 rng(seed);
 
-map<string, vector<string>> categoriasTerceiroSecundario = {
-    {"A", {"Futebol", "Voleibol", "Basquetebol", "Andebol"}},
-    {"B", {"Ginastica Solo", "Ginastica Aparelhos", "Ginastica Acrobatica"}},
-    {"C", {"Atletismo"}},
-    {"D", {"Patinagem"}},
-    {"E", {"Danca"}},
-    {"F", {"Raquetes"}},
-    {"G", {"Outras"}}
-};
+    vector<string> atribuicao;
 
-random_device rd; // Gerador de números aleatórios.
-mt19937 gen(rd());
+    // Categorias
+    map<char, vector<string>> cat5e6 = {
+        {'A', {"Pre-desportivos"}},
+        {'B', {"Futebol", "Voleibol", "Basquetebol", "Andebol"}},
+        {'C', {"Ginastica solo", "Ginastica aparelhos"}},
+        {'D', {"Atletismo"}},
+        {'E', {"Patinagem"}},
+        {'F', {"Danca"}}
+    };
 
-string escolherAleatorioUnico(vector<string>& opcoes) { // Escolhe um elemento aleatório da lista, remove-o e retorna o valor da lista.
+    map<char, vector<string>> cat7a12 = {
+        {'A', {"Futebol", "Voleibol", "Basquetebol", "Andebol"}},
+        {'B', {"Ginastica solo", "Ginastica aparelhos", "Ginastica acrobatica"}},
+        {'C', {"Atletismo"}},
+        {'D', {"Patinagem"}},
+        {'E', {"Danca"}},
+        {'F', {"Raquetes"}}
+    };
 
-    if (opcoes.empty()) return "";
+    if (ano == 5 || ano == 6) {
+        // 5º e 6º: uma modalidade por categoria
+        for (auto &[cat, mods] : cat5e6) {
+            if (!mods.empty()) {
+                shuffle(mods.begin(), mods.end(), rng);
+                atribuicao.push_back(mods[0]);
+            }
+        }
+    } else if (ano >= 7 && ano <= 9) {
+        // 7º-9º: regra 2A+2B+3 restantes ou 2A+4 restantes
+        vector<string> opA = cat7a12['A'];
+        vector<string> opB = cat7a12['B'];
+        vector<string> restantes = {cat7a12['C'][0], cat7a12['D'][0], cat7a12['E'][0], cat7a12['F'][0]};
 
-    uniform_int_distribution<> dist(0, opcoes.size() - 1);
+        shuffle(opA.begin(), opA.end(), rng);
+        shuffle(opB.begin(), opB.end(), rng);
+        shuffle(restantes.begin(), restantes.end(), rng);
 
-    int idx = dist(gen);
+        atribuicao.push_back(opA[0]);
+        atribuicao.push_back(opA[1]);
 
-    string escolhido = opcoes[idx];
+        atribuicao.push_back(opB[0]);
+        atribuicao.push_back(opB[1]);
 
-    opcoes.erase(opcoes.begin() + idx);
+        atribuicao.push_back(restantes[0]);
+        atribuicao.push_back(restantes[1]);
+        atribuicao.push_back(restantes[2]);
+    } else if (ano >= 10 && ano <= 12) {
+        // 10º-12º: 2A + 1(B ou C) + 1E + 2 restantes (D, F ou o que sobrou de B/C)
+        vector<string> opA = cat7a12['A'];
+        shuffle(opA.begin(), opA.end(), rng);
+        atribuicao.push_back(opA[0]);
+        atribuicao.push_back(opA[1]);
 
-    return escolhido;
+        vector<string> bc = cat7a12['B'];
+        bc.push_back(cat7a12['C'][0]);
+        shuffle(bc.begin(), bc.end(), rng);
+        string escolhidoBC = bc[0];
+        atribuicao.push_back(escolhidoBC);
 
-}
+        atribuicao.push_back(cat7a12['E'][0]); // Danca
 
-vector<string> atribuirModalidadesParaAno(int ano) { // Recebe o ano da turma e retorna um vetor as modalidades selecionadas.
-
-    vector<string> resultado;
-    const size_t max_modalidades = 6;  // Limite máximo de modalidades
-
-    if (ano == 5 || ano == 6) { // Escolhe 6 categorias de forma aleatória.
-
-        vector<pair<string, vector<string>>> categorias(categoriasSegundoCiclo.begin(), categoriasSegundoCiclo.end());
-        shuffle(categorias.begin(), categorias.end(), gen);
-
-        for (int i = 0; i < 6; ++i) {
-
-            vector<string> opcoes = categorias[i].second;
-            resultado.push_back(escolherAleatorioUnico(opcoes));
-
+        // restantes: D, F, e a categoria de BC não escolhida
+        vector<string> opRestantes;
+        if (find(cat7a12['B'].begin(), cat7a12['B'].end(), escolhidoBC) == cat7a12['B'].end()) {
+            opRestantes.push_back(cat7a12['B'][0]);
+        } else if (find(cat7a12['C'].begin(), cat7a12['C'].end(), escolhidoBC) == cat7a12['C'].end()) {
+            opRestantes.push_back(cat7a12['C'][0]);
         }
 
-        // Limita o tamanho para o máximo definido
-        if (resultado.size() > max_modalidades) {
+        opRestantes.push_back(cat7a12['D'][0]);
+        opRestantes.push_back(cat7a12['F'][0]);
+        shuffle(opRestantes.begin(), opRestantes.end(), rng);
 
-            resultado.resize(max_modalidades);
+        atribuicao.insert(atribuicao.end(), opRestantes.begin(), opRestantes.end());
 
+        // Garantir Danca no final para o 12º ano
+        if (ano == 12) {
+            auto it = find(atribuicao.begin(), atribuicao.end(), "Danca");
+            if (it != atribuicao.end()) {
+                swap(*it, atribuicao.back());
+            }
         }
-
-        return resultado;
     }
 
-    if (ano >= 7 && ano <= 9) { // Começa por escolher 2 modalidades da categoria "A".
-        // Depois escolhe aleatoriamente entre duas opções:
-        // Opção 0: escolhe 2 modalidades da categoria "B" e uma de cada das categorias "C", "D", "E", "F" e "G".
-        // Opção 1: escolhe 4 categorias aleatórias das restantes e uma modalidade de cada.
-
-        vector<string> selecionadas;
-        vector<string> a_modalidades = categoriasTerceiroSecundario["A"];
-
-        for (int i = 0; i < 2; i++) {
-
-            selecionadas.push_back(escolherAleatorioUnico(a_modalidades));
-
-        }
-
-        uniform_int_distribution<> distOp(0, 1);
-        int opcao = distOp(gen);
-
-        if (opcao == 0) {
-
-            vector<string> b_modalidades = categoriasTerceiroSecundario["B"];
-
-            for (int i = 0; i < 2; i++) {
-
-                selecionadas.push_back(escolherAleatorioUnico(b_modalidades));
-
-            }
-
-            for (string cat : {"C", "D", "E", "F", "G"}) {
-
-                vector<string> modal = categoriasTerceiroSecundario[cat];
-                selecionadas.push_back(escolherAleatorioUnico(modal));
-
-            }
-
-        } else {
-
-            vector<string> restantes = {"B", "C", "D", "E", "F", "G"};
-            shuffle(restantes.begin(), restantes.end(), gen);
-
-            for (int i = 0; i < 4; ++i) {
-
-                vector<string> modal = categoriasTerceiroSecundario[restantes[i]];
-                selecionadas.push_back(escolherAleatorioUnico(modal));
-
-            }
-
-        }
-
-        // Limita o tamanho para o máximo definido
-        if (selecionadas.size() > max_modalidades) {
-
-            selecionadas.resize(max_modalidades);
-
-        }
-
-        resultado = selecionadas;
-        return resultado;
-
+    // Aleatorizar a ordem final (exceto Danca no 12º)
+    if (!(ano == 12)) {
+        shuffle(atribuicao.begin(), atribuicao.end(), rng);
     }
 
-    if (ano >= 10 && ano <= 12) { // Escolhe 2 modalidades da categoria "A".
-        // Escolhe aleatoriamente se seleciona 1 modalidade da categoria "B" ou "C".
-        // Escolhe uma modalidade da categoria "E", exceto "Danca".
-        // Escolhe uma modalidade adicional de categorias aleatórias D, F ou G.
-        // Garante que há pelo menos 5 modalidades preenchidas.
-        // Acrescenta "Danca" sempre na última posição da lista.
-
-        vector<string> selecionadas;
-        vector<string> a_modalidades = categoriasTerceiroSecundario["A"];
-
-        for (int i = 0; i < 2; i++) {
-
-            selecionadas.push_back(escolherAleatorioUnico(a_modalidades));
-
-        }
-
-        uniform_int_distribution<> distOp(0, 1);
-        int opcao = distOp(gen);
-
-        if (opcao == 0) {
-
-            vector<string> b_modalidades = categoriasTerceiroSecundario["B"];
-            selecionadas.push_back(escolherAleatorioUnico(b_modalidades));
-
-        } else {
-
-            vector<string> c_modalidades = categoriasTerceiroSecundario["C"];
-            selecionadas.push_back(escolherAleatorioUnico(c_modalidades));
-
-        }
-
-        vector<string> e_modalidades = categoriasTerceiroSecundario["E"];
-        vector<string> e_sem_danca;
-
-        for (const auto& m : e_modalidades) {
-
-            if (m != "Danca") e_sem_danca.push_back(m);
-
-        }
-
-        if (!e_sem_danca.empty()) {
-
-            selecionadas.push_back(escolherAleatorioUnico(e_sem_danca));
-
-        }
-
-        vector<string> restantes = {"D", "F", "G"};
-        shuffle(restantes.begin(), restantes.end(), gen);
-
-        for (int i = 0; i < 1; i++) {
-
-            vector<string> modal = categoriasTerceiroSecundario[restantes[i]];
-            selecionadas.push_back(escolherAleatorioUnico(modal));
-
-        }
-
-        // Enquanto não tiver 5 modalidades, acrescenta vazio
-        while (selecionadas.size() < 5) {
-
-            selecionadas.push_back("");
-
-        }
-
-        selecionadas.push_back("Danca"); // Acrescenta "Danca" sempre no fim
-
-        // Limita o tamanho para o máximo definido (6), mantendo "Danca" no fim
-        if (selecionadas.size() > max_modalidades) {
-
-            // Remove excedentes antes do último elemento
-            selecionadas.erase(selecionadas.begin() + max_modalidades, selecionadas.end() - 1);
-
-        }
-
-        resultado = selecionadas;
-        return resultado;
-
-    }
-
-    return resultado;
-
+    return atribuicao;
 }

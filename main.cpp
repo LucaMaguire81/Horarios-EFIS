@@ -1,91 +1,65 @@
-#include "LeitorCSV.h"
-#include "AtribuicaoModalidades.h"
-#include "QualAno.h"
-#include "Restricoes.h"
-#include "Turma.h"
-
 #include <iostream>
 #include <map>
-#include <algorithm>
+#include <vector>
+#include <string>
+#include "LeitorCSV.h"
+#include "Turma.h"
+#include "QualAno.h"
+#include "AtribuicaoModalidades.h"
+#include "Restricoes.h"
 
 using namespace std;
 
 int main() {
-
     try {
+        // Ler o ficheiro CSV e criar turmas
+        map<string, Turma> turmas = lerHorariosCSV("FicheiroTeste.csv");
 
-        map<string, Turma> turmas = lerHorariosCSV("FicheiroTeste.csv"); // Cria um map com o nome da turma como chave e o objeto Turma como valor.
+        map<string, vector<string>> modalidadesPorTurma;
 
-        map<string, vector<string>> modalidadesPorTurma; // Guardamos a lista de modalidades atribuídas a cada turma.
-
-        for (const auto& [nome, turma] : turmas) { // Percorre todas as turmas e executa todas as condições.
-
+        // Atribuir modalidades a cada turma
+        for (const auto& [nome, turma] : turmas) {
             int ano = extrairAnoTurma(nome);
             vector<string> modalidades;
 
             if (ano >= 1 && ano <= 3 && nome != "1" && nome != "2" && nome != "3") {
-
-                modalidades = {"", "", "", "", "", "Danca"};
-
+                // Curso Profissional → só "Dança"
+                modalidades = {"", "", "", "", "", "Dança"};
             } else {
+                // Atribuir modalidades de acordo com o ano
+                modalidades = atribuirModalidades(ano);
 
-                modalidades = atribuirModalidadesParaAno(ano);
-
+                // Aplicar restrição específica do 12º ano
                 if (ano == 12) {
-
                     aplicarRestricao12Ano(modalidades);
-
                 }
-
-                if (ano >= 10 && ano <= 12) {
-
-                    auto it = find(modalidades.begin(), modalidades.end(), std::string("Danca"));
-
-                    if (it != modalidades.end() && it != modalidades.end() - 1) {
-
-                        modalidades.erase(it);
-                        modalidades.push_back("Danca");
-
-                    }
-
-                }
-
             }
 
             modalidadesPorTurma[nome] = modalidades;
-
         }
 
-        aplicarRestricaoConflitos(turmas, modalidadesPorTurma); // Evita que duas turmas com EFIS no mesmo horário tenham a mesma modalidade.
+        // Garantir que não existem conflitos de horários entre turmas
+        aplicarRestricaoConflitos(turmas, modalidadesPorTurma);
 
-        for (const auto& [nome, turma] : turmas) { // Output do programa.
-
+        // Mostrar resultados
+        for (const auto& [nome, turma] : turmas) {
             cout << "Turma: " << nome << "\n";
-
             for (const auto& h : turma.getHorariosEFIS()) {
-
-                cout << "Dia " << h.DiaSemana << ", Tempo Letivo " << h.TempoLetivo << ", " << h.Disciplina << "\n";
-
+                cout << "Dia " << h.DiaSemana
+                     << ", Tempo Letivo " << h.TempoLetivo
+                     << ", " << h.Disciplina << "\n";
             }
 
             cout << "Modalidades atribuidas: ";
-
             for (const auto& m : modalidadesPorTurma[nome]) {
-
                 cout << (m.empty() ? "(vazio)" : m) << "; ";
-
             }
-
             cout << "\n\n";
-
         }
 
-    } catch (const std::exception& e) {
-
-        cerr << "Erro: " << e.what() << std::endl;
-
+    } catch (const exception& e) {
+        cerr << "Erro: " << e.what() << endl;
     }
 
     return 0;
-
 }

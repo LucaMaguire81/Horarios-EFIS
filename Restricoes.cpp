@@ -1,82 +1,44 @@
 #include "Restricoes.h"
-
+#include <map>
 #include <set>
+#include <string>
+#include <vector>
 #include <algorithm>
-#include <iostream>
 
 using namespace std;
 
-void aplicarRestricao12Ano(vector<string>& modalidades) { // Exige que a modalidade dança esteja no final da lista de modalidades.
-
-    bool encontrou = false;
-
-    for (int i = modalidades.size() - 3; i < modalidades.size(); ++i) {
-
-        if (modalidades[i] == "Danca") {
-            encontrou = true;
-            break;
-
-        }
-
-    }
-
-    if (!encontrou) {
-
-        for (int i = 0; i < modalidades.size() - 3; ++i) {
-
-            if (modalidades[i] == "Danca") {
-
-                swap(modalidades[i], modalidades.back());
-                return;
-
-            }
-
-        }
-
-        modalidades.back() = "Danca";
-
-    }
-
+void aplicarRestricao12Ano(vector<string>& modalidades) {
+    auto it = find(modalidades.begin(), modalidades.end(), "Danca");
+    if (it != modalidades.end()) swap(*it, modalidades.back());
+    else modalidades.back() = "Danca";
 }
 
-void aplicarRestricaoConflitos(const map<string, Turma>& turmas, map<string, vector<string>>& modalidadesPorTurma) {
+void aplicarRestricaoConflitos(const map<string, Turma>& turmas,
+                               map<string, vector<string>>& modalidadesPorTurma) {
+    map<pair<int,int>, set<string>> ocupacao;
 
-    // Evita conflitos de modalidades no mesmo horário, ou seja, duas turmas que partilham o mesmo horário de EFIS não podem ter a mesma modalidade ao mesmo tempo.
+    for (auto& [nomeTurma, turma] : turmas) {
+        auto& mods = modalidadesPorTurma[nomeTurma];
 
-    map<pair<int, int>, set<string>> ocupadas;
+        for (auto& h : turma.getHorariosEFIS()) {
+            pair<int,int> slot = {h.DiaSemana, h.TempoLetivo};
+            set<string> usadas = ocupacao[slot];
 
-    for (const auto& [nomeTurma, turma] : turmas) {
-
-        auto& modalidades = modalidadesPorTurma[nomeTurma];
-
-        for (const auto& horario : turma.getHorariosEFIS()) {
-
-            pair<int, int> slot = {horario.DiaSemana, horario.TempoLetivo};
-            set<string>& usadas = ocupadas[slot];
-
-            for (string& mod : modalidades) {
-
-                if (usadas.count(mod)) {
-
-                    for (string nova : {"Futebol", "Voleibol", "Basquetebol", "Andebol", "Ginastica Solo", "Ginastica Aparelhos", "Ginastica Acrobatica", "Atletismo", "Patinagem", "Danca", "Raquetes", "Outras"}) {
-
-                        if (!usadas.count(nova)) {
-
-                            mod = nova;
+            for (size_t i=0;i<mods.size();++i) {
+                if (usadas.count(mods[i])) {
+                    // Tentar encontrar alternativa que nao viole regras
+                    string alternativa = "(Vazio)";
+                    for (auto &cand : mods) {
+                        if (!usadas.count(cand)) {
+                            alternativa = cand;
                             break;
-
                         }
-
                     }
-
+                    mods[i] = alternativa;
                 }
-
-                usadas.insert(mod);
-
+                usadas.insert(mods[i]);
             }
-
+            ocupacao[slot] = usadas;
         }
-
     }
-
 }
