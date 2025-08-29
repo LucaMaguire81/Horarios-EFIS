@@ -27,4 +27,7 @@ public:
 
     vector<Horario> getHorariosEFIS() const;
 
+    // Devolve os horarios EFIS ordenados por dia e tempo letivo
+    vector<Horario> getHorariosEFISOrdenados() const;
+
 };

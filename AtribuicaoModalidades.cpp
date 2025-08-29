@@ -21,7 +21,8 @@ vector<string> atribuirModalidades(int ano) {
         {'C', {"Ginastica solo", "Ginastica aparelhos"}},
         {'D', {"Atletismo"}},
         {'E', {"Patinagem"}},
-        {'F', {"Danca"}}
+        {'F', {"Danca"}},
+        {'G', {"outras"}}
     };
 
     map<char, vector<string>> cat7a12 = {
@@ -30,36 +31,37 @@ vector<string> atribuirModalidades(int ano) {
         {'C', {"Atletismo"}},
         {'D', {"Patinagem"}},
         {'E', {"Danca"}},
-        {'F', {"Raquetes"}}
+        {'F', {"Raquetes"}},
+        {'G', {"outras"}}
     };
 
     if (ano == 5 || ano == 6) {
-        // 5º e 6º: uma modalidade por categoria
-        for (auto &[cat, mods] : cat5e6) {
-            if (!mods.empty()) {
-                shuffle(mods.begin(), mods.end(), rng);
-                atribuicao.push_back(mods[0]);
+        // 5º e 6º: uma modalidade por categoria (total 6)
+        vector<char> categorias = {'A', 'B', 'C', 'D', 'E', 'F'}; // Excluir G para ter apenas 6
+        shuffle(categorias.begin(), categorias.end(), rng);
+        
+        for (char cat : categorias) {
+            if (cat5e6.find(cat) != cat5e6.end() && !cat5e6[cat].empty()) {
+                shuffle(cat5e6[cat].begin(), cat5e6[cat].end(), rng);
+                atribuicao.push_back(cat5e6[cat][0]);
             }
         }
     } else if (ano >= 7 && ano <= 9) {
-        // 7º-9º: regra 2A+2B+3 restantes ou 2A+4 restantes
+        // 7º-9º: 2A + 4 restantes (total 6)
         vector<string> opA = cat7a12['A'];
-        vector<string> opB = cat7a12['B'];
-        vector<string> restantes = {cat7a12['C'][0], cat7a12['D'][0], cat7a12['E'][0], cat7a12['F'][0]};
+        vector<string> restantes = {cat7a12['B'][0], cat7a12['C'][0], cat7a12['D'][0], cat7a12['E'][0], cat7a12['F'][0], cat7a12['G'][0]};
 
         shuffle(opA.begin(), opA.end(), rng);
-        shuffle(opB.begin(), opB.end(), rng);
         shuffle(restantes.begin(), restantes.end(), rng);
 
         atribuicao.push_back(opA[0]);
         atribuicao.push_back(opA[1]);
 
-        atribuicao.push_back(opB[0]);
-        atribuicao.push_back(opB[1]);
-
+        // Escolher 4 das 6 restantes para total de 6
         atribuicao.push_back(restantes[0]);
         atribuicao.push_back(restantes[1]);
         atribuicao.push_back(restantes[2]);
+        atribuicao.push_back(restantes[3]);
     } else if (ano >= 10 && ano <= 12) {
         // 10º-12º: 2A + 1(B ou C) + 1E + 2 restantes (D, F ou o que sobrou de B/C)
         vector<string> opA = cat7a12['A'];
@@ -75,19 +77,20 @@ vector<string> atribuirModalidades(int ano) {
 
         atribuicao.push_back(cat7a12['E'][0]); // Danca
 
-        // restantes: D, F, e a categoria de BC não escolhida
-        vector<string> opRestantes;
+        // restantes: escolher 2 entre {D, F, G, e a categoria de BC não escolhida}
+        vector<string> candidatos;
         if (find(cat7a12['B'].begin(), cat7a12['B'].end(), escolhidoBC) == cat7a12['B'].end()) {
-            opRestantes.push_back(cat7a12['B'][0]);
-        } else if (find(cat7a12['C'].begin(), cat7a12['C'].end(), escolhidoBC) == cat7a12['C'].end()) {
-            opRestantes.push_back(cat7a12['C'][0]);
+            candidatos.push_back(cat7a12['B'][0]);
+        } else {
+            candidatos.push_back(cat7a12['C'][0]);
         }
+        candidatos.push_back(cat7a12['D'][0]);
+        candidatos.push_back(cat7a12['F'][0]);
+        candidatos.push_back(cat7a12['G'][0]);
+        shuffle(candidatos.begin(), candidatos.end(), rng);
 
-        opRestantes.push_back(cat7a12['D'][0]);
-        opRestantes.push_back(cat7a12['F'][0]);
-        shuffle(opRestantes.begin(), opRestantes.end(), rng);
-
-        atribuicao.insert(atribuicao.end(), opRestantes.begin(), opRestantes.end());
+        atribuicao.push_back(candidatos[0]);
+        atribuicao.push_back(candidatos[1]);
 
         // Garantir Danca no final para o 12º ano
         if (ano == 12) {

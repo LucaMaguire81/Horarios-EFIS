@@ -1,4 +1,5 @@
 #include "Turma.h"
+#include <algorithm>
 
 using namespace std;
 
@@ -26,5 +27,18 @@ vector<Horario> Turma::getHorariosEFIS() const { // Filtra o horário completo d
     }
 
     return efisHorarios;
+
+}
+
+vector<Horario> Turma::getHorariosEFISOrdenados() const {
+
+    vector<Horario> efis = getHorariosEFIS();
+
+    sort(efis.begin(), efis.end(), [](const Horario& a, const Horario& b){
+        if (a.DiaSemana != b.DiaSemana) return a.DiaSemana < b.DiaSemana;
+        return a.TempoLetivo < b.TempoLetivo;
+    });
+
+    return efis;
 
 }
