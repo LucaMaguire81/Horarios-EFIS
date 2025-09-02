@@ -1,0 +1,1 @@
+/usr/bin/c++ -g -Xlinker --dependency-file=CMakeFiles/EFIS.dir/link.d CMakeFiles/EFIS.dir/main.cpp.o CMakeFiles/EFIS.dir/Turma.cpp.o CMakeFiles/EFIS.dir/AtribuicaoModalidades.cpp.o CMakeFiles/EFIS.dir/Restricoes.cpp.o CMakeFiles/EFIS.dir/LeitorCSV.cpp.o CMakeFiles/EFIS.dir/QualAno.cpp.o -o EFIS
