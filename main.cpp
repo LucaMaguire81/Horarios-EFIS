@@ -2,6 +2,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <algorithm>
 #include "LeitorCSV.h"
 #include "Turma.h"
 #include "QualAno.h"
@@ -9,6 +10,18 @@
 #include "Restricoes.h"
 
 using namespace std;
+
+// Função para formatar modalidades com hífen
+string formatarModalidade(const string& modalidade) {
+    if (modalidade.empty()) return "(vazio)";
+    
+    string resultado = modalidade;
+    // Substituir espaços por hífens
+    for (char& c : resultado) {
+        if (c == ' ') c = '-';
+    }
+    return resultado;
+}
 
 int main() {
     try {
@@ -96,20 +109,47 @@ int main() {
              << " slots (" << melhorPerc << "%)"
              << " | tentativa " << melhorTentativa << "\n\n";
 
-        // Mostrar resultados
+        // Mostrar resultados ordenados por ano (5º ao 12º, depois profissionais)
+        vector<pair<string, string>> turmasOrdenadas;
+        
+        // Primeiro, separar turmas por tipo
+        vector<pair<string, string>> turmas5a12;
+        vector<pair<string, string>> turmasProfissionais;
+        
         for (const auto& [nome, turma] : turmas) {
-            cout << "Turma: " << nome << "\n";
-            for (const auto& h : turma.getHorariosEFIS()) {
-                cout << "Dia " << h.DiaSemana
-                     << ", Tempo Letivo " << h.TempoLetivo
-                     << ", " << h.Disciplina << "\n";
-            }
-
-            cout << "Modalidades atribuidas: ";
+            int ano = extrairAnoTurma(nome);
+            string modalidades = "";
             for (const auto& m : modalidadesPorTurma[nome]) {
-                cout << (m.empty() ? "(vazio)" : m) << "; ";
+                if (!modalidades.empty()) modalidades += " ";
+                modalidades += formatarModalidade(m);
             }
-            cout << "\n\n";
+            
+            if (ano >= 5 && ano <= 12) {
+                turmas5a12.push_back({nome, modalidades});
+            } else if (ano >= 1 && ano <= 3 && nome != "1" && nome != "2" && nome != "3") {
+                turmasProfissionais.push_back({nome, modalidades});
+            }
+        }
+        
+        // Ordenar turmas 5º ao 12º por ano
+        sort(turmas5a12.begin(), turmas5a12.end(), [](const pair<string, string>& a, const pair<string, string>& b) {
+            int anoA = extrairAnoTurma(a.first);
+            int anoB = extrairAnoTurma(b.first);
+            if (anoA != anoB) return anoA < anoB;
+            return a.first < b.first; // Se mesmo ano, ordenar alfabeticamente
+        });
+        
+        // Ordenar turmas profissionais alfabeticamente
+        sort(turmasProfissionais.begin(), turmasProfissionais.end());
+        
+        // Mostrar turmas 5º ao 12º
+        for (const auto& [nome, modalidades] : turmas5a12) {
+            cout << "Turma: " << nome << " - " << modalidades << "\n";
+        }
+        
+        // Mostrar turmas profissionais
+        for (const auto& [nome, modalidades] : turmasProfissionais) {
+            cout << "Turma: " << nome << " - " << modalidades << "\n";
         }
 
     } catch (const exception& e) {

@@ -18,6 +18,9 @@ void aplicarRestricao12Ano(vector<string>& modalidades) {
 
 void aplicarRestricaoConflitos(const map<string, Turma>& turmas,
                                map<string, vector<string>>& modalidadesPorTurma) {
+    // Modalidades que só podem ter 1 turma por horário (exclusivas)
+    set<string> modalidadesExclusivas = {"Danca", "Raquetes", "outras"};
+    
     // Tentar multiplas resolucoes e guardar a com menos vazios
     const int MAX_PASSES = 60;
     unsigned seedGlobal = chrono::system_clock::now().time_since_epoch().count();
@@ -31,12 +34,11 @@ void aplicarRestricaoConflitos(const map<string, Turma>& turmas,
     for (int pass = 0; pass < MAX_PASSES; ++pass) {
         // Em cada passe, trabalhar numa copia
         map<string, vector<string>> work = modalidadesPorTurma;
-        map<pair<int,int>, set<string>> ocupacao;
-        map<pair<int,int>, map<string,int>> slotCount;
+        map<pair<int,int>, map<string,int>> slotCount; // Conta quantas turmas têm cada modalidade por slot
 
         shuffle(ordemTurmas.begin(), ordemTurmas.end(), rngGlobal);
 
-        map<string,int> duplicadosUsados;
+
 
         for (const auto& par : ordemTurmas) {
             const string& nomeTurma = par.first;
@@ -60,7 +62,7 @@ void aplicarRestricaoConflitos(const map<string, Turma>& turmas,
 
             for (size_t i = 0; i < efis.size(); ++i) {
                 pair<int,int> slot = {efis[i].DiaSemana, efis[i].TempoLetivo};
-                auto& usadas = ocupacao[slot];
+                auto& count = slotCount[slot];
 
                 auto pick_alternativa = [&](const string& atual) -> string {
                     // Tentar varias ordens de candidatos antes de desistir, priorizando os menos usados neste slot
@@ -74,22 +76,55 @@ void aplicarRestricaoConflitos(const map<string, Turma>& turmas,
                             return ca < cb;
                         });
                         for (const string& cand : candidatos) {
-                            if (!cand.empty() && !usadas.count(cand) && (!usadasNaTurma.count(cand) || cand == atual)) {
-                                return cand;
+                            if (!cand.empty()) {
+                                // Verificar se a modalidade pode ser usada neste slot
+                                bool podeUsar = false;
+                                if (modalidadesExclusivas.count(cand)) {
+                                    // Modalidade exclusiva: máximo 1 turma
+                                    podeUsar = (count[cand] == 0);
+                                } else {
+                                    // Modalidade normal: máximo 2 turmas
+                                    podeUsar = (count[cand] < 2);
+                                }
+                                
+                                // Verificar se não é duplicada na mesma turma (exceto se for a atual)
+                                bool naoDuplicada = (!usadasNaTurma.count(cand) || cand == atual);
+                                
+                                if (podeUsar && naoDuplicada) {
+                                    return cand;
+                                }
                             }
                         }
                     }
                     return string("");
                 };
 
-                bool precisaTroca = (!mods[i].empty() && usadas.count(mods[i])) || (!mods[i].empty() && usadasNaTurma.count(mods[i]) > 0 && count(mods.begin(), mods.end(), mods[i]) > 1);
+                // Verificar se a modalidade atual pode ser mantida
+                bool podeManterAtual = false;
+                if (!mods[i].empty()) {
+                    if (modalidadesExclusivas.count(mods[i])) {
+                        podeManterAtual = (count[mods[i]] == 0);
+                    } else {
+                        podeManterAtual = (count[mods[i]] < 2);
+                    }
+                    
+                    // Verificar duplicação na turma (se já existe esta modalidade noutro slot)
+                    int contagemAtual = 0;
+                    for (const auto& m : mods) {
+                        if (m == mods[i]) contagemAtual++;
+                    }
+                    if (podeManterAtual && contagemAtual > 1) {
+                        podeManterAtual = false;
+                    }
+                }
+
+                bool precisaTroca = !podeManterAtual;
                 if (precisaTroca) {
                     string alternativa = pick_alternativa(mods[i]);
                     mods[i] = alternativa.empty() ? "" : alternativa;
                 }
 
                 if (!mods[i].empty()) {
-                    usadas.insert(mods[i]);
                     usadasNaTurma.insert(mods[i]);
                     slotCount[slot][mods[i]]++;
                 }
