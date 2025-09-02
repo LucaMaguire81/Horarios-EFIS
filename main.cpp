@@ -113,7 +113,7 @@ int main() {
                 melhorTentativa = tentativa;
             }
 
-            if (perc < 2) {
+            if (perc == 0) {
                 break;
             }
         }
