@@ -34,7 +34,7 @@ int main() {
         double melhorPerc = 100.0;
         int melhorTentativa = -1;
 
-        const int MAX_TENTATIVAS_GLOBAIS = 200;
+        const int MAX_TENTATIVAS_GLOBAIS = 100;
         for (int tentativa = 1; tentativa <= MAX_TENTATIVAS_GLOBAIS; ++tentativa) {
             map<string, vector<string>> modalidadesPorTurma;
 
@@ -43,8 +43,16 @@ int main() {
                 int ano = extrairAnoTurma(nome);
                 vector<string> modalidades;
 
-                if (ano >= 1 && ano <= 3 && nome != "1" && nome != "2" && nome != "3") {
-                    // Curso Profissional → só "Danca"
+                // Verificar se é turma profissional (contém TGPSI, PI/TD, TG/TQ, ou turmas específicas)
+                bool isProfissional = (nome.find("TGPSI") != string::npos || 
+                                     nome.find("PI/TD") != string::npos || 
+                                     nome.find("TG/TQ") != string::npos ||
+                                     nome == "12TD/TG" ||
+                                     nome == "10TD/PI" ||
+                                     nome == "10TIG");
+                
+                if (isProfissional) {
+                    // Curso Profissional → vazios e "Danca" no fim
                     modalidades = {"", "", "", "", "", "Danca"};
                 } else {
                     // Atribuir modalidades de acordo com o ano
@@ -72,12 +80,21 @@ int main() {
             // Garantir que não existem conflitos de horários entre turmas
             aplicarRestricaoConflitos(turmas, modalidadesPorTurma);
 
-            // Calcular resumo de vazios (5-12)
+            // Calcular resumo de vazios (5-12, excluindo profissionais)
             int totalVazios = 0;
             int totalSlots5a12 = 0;
             for (const auto& [nomeTurma, mods] : modalidadesPorTurma) {
                 int anoTurma = extrairAnoTurma(nomeTurma);
-                if (anoTurma >= 5 && anoTurma <= 12) {
+                
+                // Verificar se é turma profissional
+                bool isProfissional = (nomeTurma.find("TGPSI") != string::npos || 
+                                     nomeTurma.find("PI/TD") != string::npos || 
+                                     nomeTurma.find("TG/TQ") != string::npos ||
+                                     nomeTurma == "12TD/TG" ||
+                                     nomeTurma == "10TD/PI" ||
+                                     nomeTurma == "10TIG");
+                
+                if (anoTurma >= 5 && anoTurma <= 12 && !isProfissional) {
                     // contar vazios nas modalidades e total de slots EFIS reais
                     for (const auto& m : mods) if (m.empty()) ++totalVazios;
                     auto itTurma = turmas.find(nomeTurma);
@@ -96,7 +113,7 @@ int main() {
                 melhorTentativa = tentativa;
             }
 
-            if (perc < 10) {
+            if (perc < 2) {
                 break;
             }
         }
@@ -124,9 +141,17 @@ int main() {
                 modalidades += formatarModalidade(m);
             }
             
-            if (ano >= 5 && ano <= 12) {
+            // Verificar se é turma profissional
+            bool isProfissional = (nome.find("TGPSI") != string::npos || 
+                                 nome.find("PI/TD") != string::npos || 
+                                 nome.find("TG/TQ") != string::npos ||
+                                 nome == "12TD/TG" ||
+                                 nome == "10TD/PI" ||
+                                 nome == "10TIG");
+            
+            if (ano >= 5 && ano <= 12 && !isProfissional) {
                 turmas5a12.push_back({nome, modalidades});
-            } else if (ano >= 1 && ano <= 3 && nome != "1" && nome != "2" && nome != "3") {
+            } else if (isProfissional) {
                 turmasProfissionais.push_back({nome, modalidades});
             }
         }
@@ -139,8 +164,13 @@ int main() {
             return a.first < b.first; // Se mesmo ano, ordenar alfabeticamente
         });
         
-        // Ordenar turmas profissionais alfabeticamente
-        sort(turmasProfissionais.begin(), turmasProfissionais.end());
+        // Ordenar turmas profissionais por ano e depois alfabeticamente
+        sort(turmasProfissionais.begin(), turmasProfissionais.end(), [](const pair<string, string>& a, const pair<string, string>& b) {
+            int anoA = extrairAnoTurma(a.first);
+            int anoB = extrairAnoTurma(b.first);
+            if (anoA != anoB) return anoA < anoB;
+            return a.first < b.first; // Se mesmo ano, ordenar alfabeticamente
+        });
         
         // Mostrar turmas 5º ao 12º
         for (const auto& [nome, modalidades] : turmas5a12) {

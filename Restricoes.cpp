@@ -22,7 +22,7 @@ void aplicarRestricaoConflitos(const map<string, Turma>& turmas,
     set<string> modalidadesExclusivas = {"Danca", "Raquetes", "outras"};
     
     // Tentar multiplas resolucoes e guardar a com menos vazios
-    const int MAX_PASSES = 60;
+    const int MAX_PASSES = 100;
     unsigned seedGlobal = chrono::system_clock::now().time_since_epoch().count();
     mt19937 rngGlobal(seedGlobal);
 
