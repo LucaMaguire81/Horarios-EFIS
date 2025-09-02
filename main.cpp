@@ -2,6 +2,8 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <climits>
+#include <utility>
 #include "LeitorCSV.h"
 #include "Turma.h"
 #include "QualAno.h"
@@ -89,7 +91,7 @@ int main() {
         }
 
         // Usar o melhor resultado encontrado
-        map<string, vector<string>> modalidadesPorTurma = move(melhorModalidades);
+        map<string, vector<string>> modalidadesPorTurma = std::move(melhorModalidades);
 
         cout << "Vazios totais (5-12): " << melhorVazios
              << " de " << melhorSlots
